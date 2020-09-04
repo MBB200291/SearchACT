@@ -120,7 +120,12 @@ def main():
                     break
                 else:
                     try:
-                        print('answer: ', parse(str_input))
+                        cal_ans = parse(str_input)
+                        if cal_ans != eval(str_input):
+                            print('error')
+                            pass
+                        else:
+                            print('answer: ', cal_ans))
                     except:
                         print('formula error !')
                         pass

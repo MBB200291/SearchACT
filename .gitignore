@@ -1,7 +1,9 @@
 # 檔案名稱 .gitignore
 
-# 忽略 SearchACT.spec 檔案
-SearchACT.spec
+# 忽略 *.spec 檔案
+*.spec
+
+# exe
 *.exe
 
 # 忽略 資料夾
