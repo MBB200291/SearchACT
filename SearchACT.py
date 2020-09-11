@@ -15,7 +15,7 @@ Version log:
 - 1.3.1
 - 1.4.0: add calculator
 - 1.5.0: calculator triggering part
-- 1.6.0: 
+- 1.6.0:
     - caculator loop inside until exit
     - modify a file name for other OS
 - 1.7.0:
@@ -24,21 +24,22 @@ Version log:
     - search key by string matching
 - 1.8.0:
     - new structure
+- 1.8.1:
+    - calculator re-implement
 
 Next version
 - include removing function
 
 """
 
-__version__ = '1.8.0'
+__version__ = '1.8.1'
 
 
 from sys import argv
 from os import path
-import time
 ### custom functions
 from modules.search import SearchACT
-from modules.calculator import parse
+import modules.calculator as cal
 from modules.contact import Contact
 from modules.help_info import help_
 ###
@@ -52,11 +53,12 @@ LI_EXIST_WORDS = ['exit', 'bye', 'ex', 'bye bye', 'quit']
 # main process
 def main():
     print('Type part of name to search ACT contact. Type "*help" to get detail instruction. Type "exit" to leave.\nType *cal to enter caculation mode.')
-#    global DICT_KEY_CONTACT, DICT_TERM_KEY,  PATH_DICT_KEY_CONTACT, PATH_DICT_TERM_KEY    
+#    global DICT_KEY_CONTACT, DICT_TERM_KEY,  PATH_DICT_KEY_CONTACT, PATH_DICT_TERM_KEY
+    calculator = cal.Calculator(cal.names, cal.ops)
     while True:
         str_input = input('\nSeach >>> ')#.lower()
         Contact_ = Contact(PATH_DICT_KEY_CONTACT, PATH_DICT_TERM_KEY)
-        SearchACT_ = SearchACT(Contact_.DICT_TERM_KEY) 
+        SearchACT_ = SearchACT(Contact_.DICT_TERM_KEY)
         '''
         if str_input in DICT_TERM_KEY:
             ## matched
@@ -74,13 +76,12 @@ def main():
                 continue
             str_input_Term = input('Type the new search term or type "exit" to exit.\n>>> ').lower()
             if str_input_Term in LI_EXIST_WORDS:
-                break 
+                break
             ans = Contact_.add_searchTerm_to_key(str_input_Term, str_input_KEY)
             if ans == 0:
                 pass
             else:
                 break
-
         # add contact info function
         elif str_input in ['*addinfo', '*add2']:
             str_input_KEY = input('Type the E-mail ID (for example, type "benlin" for "benlin@actgenomics.com") or type "exit" to exit.\n>>> ').lower()
@@ -92,7 +93,6 @@ def main():
             str_add_info = input('Type the new info of the person or type "exit" to exit.\n>>> ').lower()
             if str_add_info in LI_EXIST_WORDS:
                 break
-
             ans = Contact_.add_contactInfo(str_input_KEY, str_add_info)
             if ans == 0:
                 pass
@@ -147,6 +147,5 @@ def main():
             else:
                 for r in set_matches:
                     print('\n', '>'+'\t'.join(Contact_.DICT_KEY_CONTACT[r]))
-            
 if __name__ == '__main__':
     main()

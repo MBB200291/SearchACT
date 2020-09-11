@@ -1,48 +1,43 @@
-import platform
 import os
-import pickle
 import tkinter
-import time
+import tkinter.filedialog
+import modules.calculator
+import modules.contact
+import modules.search
+import modules.help_info
+import SearchACT
 
-runOS = platform.system()
-
-rootPath = os.path.dirname(os.path.abspath(__file__))
-dataPath = os.path.join(rootPath, '_dict_key_contacts.pickle')
-with open(dataPath, 'rb') as file:
-    data = pickle.load(file)
-dmapPath = os.path.join(rootPath, '_dict_terms_key.pickle')
-with open(dmapPath, 'rb') as file:
-    dmap = pickle.load(file)
+__version__ = '1.0.0'
 
 class SearchACTModel:
-    def __init__(self, data, dmap):
-        self.data = data
-        self.dmap = dmap
+    def __init__(self, contact, searcher, calculator):
+        self.contact = contact
+        self.searcher = searcher
+        self.calculator = calculator
 
     def search(self, text):
-        ndata = []
-        if text in self.dmap:
-            for key in self.dmap[text]:
-                ndata.append(data[key])
-        else:
-            dataMatch = set()
-            for kwarg in self.dmap:
-                if text in kwarg:
-                    for key in self.dmap[kwarg]:
-                        dataMatch.add(key)
-            for key in dataMatch:
-                ndata.append(self.data[key])
-        if (len(ndata) == 0):
-            return [[f'"{text}" not in list.']]
-        else:
-            return ndata
+        try:
+            matchIDs = self.searcher.parse_formula(text)
+            if len(matchIDs) == 0:
+                return [[f'\'{text}\' not found.']]
+            else:
+                data = []
+                for matchID in matchIDs:
+                    data.append(self.contact.DICT_KEY_CONTACT[matchID])
+                return data
+        except:
+            return [['Formula error!']]
 
     def calculate(self, text):
         try:
-            result = eval(text)
+            result = self.calculator.cal(text)
             return [[str(result)]]
         except:
             return [['Formula error!']]
+
+    def updateContact(self, contact, searcher):
+        self.contact = contact
+        self.searcher = searcher
 
 class ScrollTable(tkinter.Frame):
     def __init__(self, *args, **kwargs):
@@ -88,11 +83,27 @@ class ScrollTable(tkinter.Frame):
         self.data = data
         self.update()
 
+class MessageWindow(tkinter.Toplevel):
+    def __init__(self, text, title, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.title(title)
+        self.attributes('-topmost', 'true')
+        self.messageBox = tkinter.Message(self, text=text, width=400)
+        self.messageBox.pack(fill='both')
+        self.bind('<Escape>', self.close)
+
+    def close(self, *args, **kwargs):
+        self.destroy()
+
 class SearchACTView(tkinter.Tk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.title('SearchACT')
         self.geometry('800x600')
+        self.mainMenu = tkinter.Menu(self)
+        self.config(menu=self.mainMenu)
+        self.fileMenu = tkinter.Menu(self.mainMenu, tearoff=0)
+        self.mainMenu.add_cascade(label='File', menu=self.fileMenu)
         self.container = tkinter.Frame(self)
         self.container.pack(fill='both', padx=5, pady=5, expand=True)
         self.inputContainer = tkinter.Frame(self.container)
@@ -108,115 +119,88 @@ class SearchACTView(tkinter.Tk):
         self.outputContainer = ScrollTable(self.container)
         self.outputContainer.pack(fill='both', expand=True)
 
+    def openMsgWindow(self, text, title, *args, **kwargs):
+        return MessageWindow(text, title, *args, **kwargs)
+
 class SearchACTController:
     def __init__(self):
-        self.model = SearchACTModel(data, dmap)
+        self.rootPath = os.path.dirname(os.path.abspath(__file__))
+        self.dataPath = os.path.join(self.rootPath, '_dict_key_contacts.pickle')
+        self.dmapPath = os.path.join(self.rootPath, '_dict_terms_key.pickle')
         self.view = SearchACTView()
+        [contact, search] = self.loadContact()
+        cal = self.loadCalculator()
+        self.model = SearchACTModel(contact, search, cal)
         self.view.searchButton['command'] = self.search
         self.view.calculateButton['command'] = self.calculate
+        self.view.mainMenu.add_command(label='Info', command=self.info)
+        self.view.fileMenu.add_command(label='Load', command=self.setContactFiles)
+        self.view.inputText.focus_set()
+        self.view.inputText.bind('<Return>', self.search)
+        self.view.inputText.bind('<KP_Enter>', self.search)
+        self.view.inputText.bind('<Control-Key-Return>', self.calculate)
+        self.view.inputText.bind('<Control-Key-KP_Enter>', self.calculate)
+        self.view.inputText.bind('<Control-KeyRelease-a>', self.selectAll)
+        self.view.inputText.bind('<Control-KeyRelease-A>', self.selectAll)
+        self.view.bind('<Control-Key-l>', self.setContactFiles)
+        self.view.bind('<Control-Key-L>', self.setContactFiles)
+        self.view.bind('<Control-Key-i>', self.info)
+        self.view.bind('<Control-Key-I>', self.info)
+        self.view.bind('<Double-Escape>', self.close)
         self.view.mainloop()
 
-    def search(self):
-        text = self.view.inputText.get().lower()
+    def close(self, *args, **kwargs):
+        self.view.destroy()
+
+    def info(self, *args, **kwargs):
+        mver = SearchACT.__version__
+        gver = __version__
+        text = f'Main version {mver}\nGUI version {gver}'
+        self.view.openMsgWindow(text, 'Info')
+
+    def setContactFiles(self, *args, **kwargs):
+        dataPath = tkinter.filedialog.askopenfilename(
+            title='Select a key contact file',
+            initialdir=self.rootPath,
+            filetypes=[('Pickle files', '.pickle')]
+        )
+        dmapPath = tkinter.filedialog.askopenfilename(
+            title='Select a terms key file',
+            initialdir=self.rootPath,
+            filetypes=[('Pickle files', '.pickle')]
+        )
+        if all([type(dataPath) == str, type(dmapPath) == str]):
+            self.dataPath = dataPath
+            self.dmapPath = dmapPath
+            [contact, search] = self.loadContact()
+            self.model.updateContact(contact, search)
+
+    def loadContact(self, *args, **kwargs):
+        if all([os.path.isfile(self.dataPath), os.path.isfile(self.dmapPath)]):
+            contact = modules.contact.Contact(self.dataPath, self.dmapPath)
+            search = modules.search.SearchACT(contact.DICT_TERM_KEY)
+            return [contact, search]
+        else:
+            self.view.openMsgWindow('No contact files', 'Error')
+            return [None, None]
+
+    def loadCalculator(self, *args, **kwargs):
+        names = modules.calculator.names
+        ops = modules.calculator.ops
+        return modules.calculator.Calculator(names, ops)
+
+    def selectAll(self, *args, **kwargs):
+        self.view.inputText.select_range(0, tkinter.END)
+        self.view.inputText.icursor(tkinter.END)
+
+    def search(self, *args, **kwargs):
+        text = self.view.inputText.get()
         result = self.model.search(text)
         self.view.outputContainer.setData(result)
 
-    def calculate(self):
-        def cal(s,lop):
-            s = handle(s)
-            if not any(x in s for x in ['+','-','*', '/']):
-                return float(s)
-            for i in ['+','-','*', '/']:
-                left, op, right = s.partition(i)
-                # print(i, [left, op, right])
-                if op in ['+', '-','*','/']:
-                    if op == '*':
-                        if right == '':
-                            return(cal(left,lop))
-                        else:
-                            return(cal(left,lop) * cal(right,lop))
-                    elif op == '/':
-                        if lop != '/':
-                            lop = '/'
-                        elif lop == '/':
-                            return(cal(left,lop) * cal(right,lop))   
-                            lop = ''
-                        return(cal(left,lop) / cal(right,lop))
-                    elif op == '+':
-                        if left == '':
-                            return(cal('0+'+right,lop))
-                        else:
-                            return(cal(left,lop) + cal(right,lop))
-                    elif op == '-':
-                        if left == '':
-                            return(cal('0-'+right,lop))
-                        else:
-                            if lop != '-':
-                                lop = '-'
-                            elif lop == '-':
-                                return(cal(left,lop) + cal(right,lop))   
-                                lop = ''
-                            return(cal(left,lop) - cal(right,lop))
-
-
-        def parse(s,lop=''):
-            if s == '':
-                return 'Empty string!'
-            l = []
-            r = []
-            s = s.replace(' ','')
-            while any(x in s for x in ['(',')']):
-                for p in range(len(s)):
-                    if s[p] == '(' and len(r) < 1:
-                        l.append(p)
-                    elif s[p] == ')':
-                        if len(l) == 0:
-                            return('left bracket first!')
-                        else:
-                            r.append(p)
-                            if s[l[-1]+1:r[-1]] == '':
-                                return 'formula error!'
-                            else:
-                                ans = cal(s[l[-1]+1:r[-1]],lop)
-                            s = "".join((s[:l[-1]],str(ans),s[r[-1]+1:]))
-                            l.clear()
-                            r.pop()
-                            break
-            s = handle(s)
-            return str(cal(s,lop))
-
-        def handle(s):  
-            timestart = time.time()
-            while any(x in s for x in ['+-','--','*-', '/-']) and time.time() < timestart+5:
-                if '+-' in s:
-                    s=s.replace('+-','-')
-                elif '--' in s:
-                    if s.find('--') == 0:
-                        s=s.replace('--','')
-                    s=s.replace('--','+')
-                elif '*-' in s:
-                    p = s.find('*-')
-                    for i in range(p-1,-1,-1):
-                        if s[i] in ['+','-','*','/']: 
-                            s="".join((s[:i+1],'-',s[i+1:]))
-                            s="".join((s[:p+1],'*',s[p+3:]))
-                            break
-                        elif i == 0:
-                            s="".join(('-',s[i:]))
-                            s="".join((s[:p+1],'*',s[p+3:]))
-                elif '/-' in s:
-                    p = s.find('/-')
-                    for i in range(p-1,-1,-1):
-                        if s[i] in ['+','-','*','/']: 
-                            s="".join((s[:i+1],'-',s[i+1:]))
-                            s="".join((s[:p+1],'/',s[p+3:]))
-                            break
-                        elif i == 0:
-                            s="".join(('-',s[i:]))
-                            s="".join((s[:p+1],'/',s[p+3:]))
-            return(s)
+    def calculate(self, *args, **kwargs):
         text = self.view.inputText.get()
-        result = self.model.calculate(parse(text))
+        result = self.model.calculate(text)
         self.view.outputContainer.setData(result)
 
 if __name__ == '__main__':
