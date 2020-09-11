@@ -26,13 +26,15 @@ Version log:
     - new structure
 - 1.8.1:
     - calculator re-implement
+- 1.9.0:
+    - single pickle file
 
 Next version
 - include removing function
 
 """
 
-__version__ = '1.8.1'
+__version__ = '1.9.0'
 
 
 from sys import argv
@@ -45,26 +47,24 @@ from modules.help_info import help_
 ###
 
 PATH_OF_SCRIPT = path.dirname(argv[0])
+'''
 PATH_DICT_KEY_CONTACT = path.join(PATH_OF_SCRIPT, '_dict_key_contacts.pickle')
 PATH_DICT_TERM_KEY = path.join(PATH_OF_SCRIPT, '_dict_terms_key.pickle')
+'''
+PATH_DICT_KEY_CONTACT = path.join(PATH_OF_SCRIPT, '_dict_contacts.pickle')
 
 LI_EXIST_WORDS = ['exit', 'bye', 'ex', 'bye bye', 'quit']
 
-# main process
 def main():
     print('Type part of name to search ACT contact. Type "*help" to get detail instruction. Type "exit" to leave.\nType *cal to enter caculation mode.')
 #    global DICT_KEY_CONTACT, DICT_TERM_KEY,  PATH_DICT_KEY_CONTACT, PATH_DICT_TERM_KEY
     calculator = cal.Calculator(cal.names, cal.ops)
     while True:
         str_input = input('\nSeach >>> ')#.lower()
-        Contact_ = Contact(PATH_DICT_KEY_CONTACT, PATH_DICT_TERM_KEY)
+        #Contact_ = Contact(PATH_DICT_KEY_CONTACT, PATH_DICT_TERM_KEY)
+        Contact_ = Contact(PATH_DICT_KEY_CONTACT)
         SearchACT_ = SearchACT(Contact_.DICT_TERM_KEY)
-        '''
-        if str_input in DICT_TERM_KEY:
-            ## matched
-            for k in DICT_TERM_KEY[str_input]:
-                print('\n', '>'+'\t'.join(DICT_KEY_CONTACT[k]))
-        '''
+
         # add search term function
         if str_input in ['*addterm', '*add1']:
             print('into adding mode')
@@ -133,10 +133,7 @@ def main():
             print(f' version:{__version__}')
             print(help_())
         else:
-            #raw_match(str_input, DICT_TERM_KEY, DICT_KEY_CONTACT)
             try:
-                #set_matches = search(str_input)
-                #set_matches = parse_formula(str_input)
                 set_matches = SearchACT_.parse_formula(str_input)
             except:
                 print('formula error !')
