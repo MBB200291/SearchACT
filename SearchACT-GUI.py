@@ -87,10 +87,13 @@ class MessageWindow(tkinter.Toplevel):
     def __init__(self, text, title, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.title(title)
+        self.minsize(200, 0)
         self.attributes('-topmost', 'true')
         self.messageBox = tkinter.Message(self, text=text, width=400)
         self.messageBox.pack(fill='both')
         self.bind('<Escape>', self.close)
+        self.focus_force()
+        self.grab_set()
 
     def close(self, *args, **kwargs):
         self.destroy()
