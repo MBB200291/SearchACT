@@ -52,7 +52,7 @@ def MakeDict(path_contact):#, _nrows):
     dict_terms_key = {} #
     dict_key_contacts = {'*version':excel_file_name, '*ver':excel_file_name}
     
-    DI_Apartment_Abbrev = {  ### 欸欸那個大家如果有知道這些部門的縮寫，麻煩幫忙補一下啦！ ###
+    DI_Apartment_Abbrev = {  ### 欸欸那個大家如果有知道這些部門的縮寫，麻煩幫忙補一下！ ###
         "執行長室": "CEO", 
         #"技術中心": "", 
         #"營運中心": "", 
@@ -99,7 +99,8 @@ def MakeDict(path_contact):#, _nrows):
         MailAress = R['信     箱'].strip()
         PhoneNum = R.分機
         CellPhone = R['手   機']
-        Department = R['部門名稱'].strip()
+        #Department = R['部門名稱'].strip()
+        Department = R['修訂後'].strip() 
         
         print(ChnName, EngName)
         
@@ -163,7 +164,7 @@ class Contact():
         self.DICT_TERM_KEY = read_pickle(PATH_DICT_TERM_KEY)
         '''
         self.PATH_DICT_CONTACT = PATH_DICT_CONTACT
-        self.DICT_KEY_CONTACT, self.DICT_TERM_KEY = read_pickle(PATH_DICT_CONTACT)
+        self.DICT_TERM_KEY, self.DICT_KEY_CONTACT = read_pickle(PATH_DICT_CONTACT)
         
     def add_searchTerm_to_key(self, str_input_Term, str_input_KEY):
         self.DICT_TERM_KEY.setdefault(str_input_Term, set()).add(str_input_KEY)
