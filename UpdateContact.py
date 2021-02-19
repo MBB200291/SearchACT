@@ -18,11 +18,11 @@ next version:
 '''
 __version__ = '2.0.0'
 
-from modules.contact import locate_contact_file, MakeDict
+from modules.contact import locate_contact_file, make_dict
     
 def main():
     print('# Loading')
-    MakeDict(locate_contact_file(__file__))
+    make_dict(locate_contact_file(__file__))
 
 if __name__ == '__main__':
     main()

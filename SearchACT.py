@@ -35,6 +35,7 @@ Next version
 """
 
 __version__ = '1.9.0'
+print('[VERSION]', __version__)
 
 
 from sys import argv
@@ -144,5 +145,6 @@ def main():
             else:
                 for r in set_matches:
                     print('\n', '>'+'\t'.join(Contact_.DICT_KEY_CONTACT[r]))
+                    #print('\n', '>'+' '.join(map(lambda x: x.ljust(30, ' '), Contact_.DICT_KEY_CONTACT[r])))
 if __name__ == '__main__':
     main()

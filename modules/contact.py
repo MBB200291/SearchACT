@@ -43,7 +43,7 @@ def read_excel(path_contact):
         print('*** Contact file not exist')
         return None
 
-def MakeDict(path_contact):#, _nrows):
+def make_dict(path_contact):#, _nrows):
     ## Read excel
     contacts, excel_file_name = read_excel(path_contact)
     if type(contacts)!=pd.core.frame.DataFrame:
@@ -52,7 +52,7 @@ def MakeDict(path_contact):#, _nrows):
     dict_terms_key = {} #
     dict_key_contacts = {'*version':excel_file_name, '*ver':excel_file_name}
     
-    DI_Apartment_Abbrev = {  ### 欸欸那個大家如果有知道這些部門的縮寫，麻煩幫忙補一下！ ###
+    DI_Apartment_Abbrev = {  ### 欸欸那個大家如果有知道這些部門的縮寫，麻煩幫忙補一下 ###
         "執行長室": "CEO", 
         #"技術中心": "", 
         #"營運中心": "", 
@@ -68,7 +68,8 @@ def MakeDict(path_contact):#, _nrows):
         "生物資訊部": "BI", 
         "人工智慧部": "AI", 
         "數據分析部": "DA", 
-        #"資料科學處": "", 
+        "數據智能部": "DI", 
+        "資料科學處": "DS", 
         #"分子檢驗處": "", 
         "次世代定序部": "NGS", 
         #"轉譯醫學處": "", 
@@ -92,22 +93,22 @@ def MakeDict(path_contact):#, _nrows):
     }
     for i,R in contacts.iterrows():
 
-        ChnName = R.姓名.strip()
-        EngName = str(R['英 文 名']).strip()
+        PhoneNum = str(R['分機']).strip()
+        ChnName = R['姓名'].strip()
+        Department2 = R['所屬處級名稱'].strip()
+        Department = R['部門名稱'].strip()
+        EngName = str(R['英文名']).strip()
         EngName_dd = EngName.replace('-', ' ').strip()
         EngName_dd2 = EngName.replace('-', '').strip()
-        MailAress = R['信     箱'].strip()
-        PhoneNum = R.分機
-        CellPhone = R['手   機']
-        #Department = R['部門名稱'].strip()
-        Department = R['修訂後'].strip() 
+        MailAress = R['信箱'].strip()
+        CellPhone = str(R['手機']).strip()
         
         print(ChnName, EngName)
         
         KEY = MailAress.split('@')[0]
 
         ## first part: key to result
-        dict_key_contacts[KEY] = [str(x) for x in [ChnName, EngName, Department, MailAress, PhoneNum, CellPhone]]
+        dict_key_contacts[KEY] = [str(x) for x in [ChnName, EngName, Department2, Department, MailAress, PhoneNum, CellPhone]]
 
         ## second part: query items to key
         
@@ -139,17 +140,20 @@ def MakeDict(path_contact):#, _nrows):
         dict_terms_key.setdefault(str(CellPhone), set()).add(KEY)
         ### by department
         dict_terms_key.setdefault(str(Department), set()).add(KEY)
+        ### by department2
+        dict_terms_key.setdefault(str(Department2), set()).add(KEY)
         ### by department's abbreviation
         dict_terms_key.setdefault(DI_Apartment_Abbrev.get(str(Department), str(Department)), set()).add(KEY)
+        dict_terms_key.setdefault(DI_Apartment_Abbrev.get(str(Department2), str(Department2)), set()).add(KEY)
 
 
     #print(os.path.split(sys.path[0])[0])
-    '''
+    #'''
     path_term_key = path.join(path.dirname(path_contact), '_dict_terms_key')
     path_key_contact = path.join(path.dirname(path_contact), '_dict_key_contacts')
     save_obj_to_pickle(path_term_key, dict_terms_key)
     save_obj_to_pickle(path_key_contact, dict_key_contacts)
-    '''
+    #'''
     path_term2key_key2contact = path.join(path.dirname(path_contact), '_dict_contacts')
     save_obj_to_pickle(path_term2key_key2contact, [dict_terms_key, dict_key_contacts])
 
